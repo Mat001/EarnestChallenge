@@ -119,7 +119,7 @@ class TestCalculation(unittest.TestCase):
         self.assertEqual(on_confirmation_page.elephant_quantity(), on_calculation_page.elephant)
         self.assertEqual(on_confirmation_page.giraffe_quantity(), on_calculation_page.giraffe)
 
-    
+
 
 
 
