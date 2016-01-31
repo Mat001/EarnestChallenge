@@ -50,21 +50,15 @@ class Page():
 
 # base class for webdriver
 class WebDriver(unittest.TestCase):
-    # __metaclass__ = ABCMeta
-
-    # @abstractmethod
     def setUp(self):
         # self._display = Display(visible=0, size=(1024, 768))  # uncomment for headless browser
         # self._display.start()      uncomment for headless browser
         self.driver = webdriver.Firefox()
         self.on_calculation_page = CalculationPage(self.driver)
-        print('Setup. Before.')
 
-    # @abstractmethod
     def tearDown(self):
         # self._display.stop()  # uncomment for headless browser
         self.driver.quit()
-        print('Teardown. After.')
 
 
 # Calculation page - first child class
@@ -125,7 +119,7 @@ class ConfirmationPage(Page):
 
 
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
-class TestCalculation(WebDriver):    # see if you can avoid multiple inheritance !!!!
+class TestCalculation(WebDriver):
 
     def test_prices(self):
 
@@ -141,10 +135,24 @@ class TestCalculation(WebDriver):    # see if you can avoid multiple inheritance
         self.assertEqual(on_confirmation_page.elephant_quantity(), self.on_calculation_page.elephant)
         self.assertEqual(on_confirmation_page.giraffe_quantity(), self.on_calculation_page.giraffe)
 
+    def test_aaa(self):
+        print('aaa')
+
+    def test_bbb(self):
+        print('bbb')
+
+    def test_ccc(self):
+        print('ccc')
+
+# if __name__ is "__main__":
+#     unittest.main()
+
 
 if __name__ is "__main__":
-    unittest.main()
-
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestCalculation))
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
 
 
 
