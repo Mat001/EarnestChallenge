@@ -61,6 +61,50 @@ class WebDriver(unittest.TestCase):
         self.driver.quit()
 
 
+class Data():
+    products = 'products'
+    name = 'name'
+    price = 'price'
+    inventory_count = 'inventory_count'
+    value = 'value'
+    taxes = 'taxes'
+    state = 'state'
+
+    d = {
+        products: [
+            {name: 'zebra', price: 13.00, inventory_count: 23},
+            {name: 'lion', price: 20.00, inventory_count: 12},
+            {name: 'elephant', price: 35.00, inventory_count: 3},
+            {name: 'giraffe', price: 17.00, inventory_count: 15}
+        ],
+        taxes: [
+            {state: 'ca', value: 0.08},
+            {state: 'ny', value: 0.06},
+            {state: 'mn', value: 0.00}
+        ]
+    }
+
+    def get_price(self, item_type):
+        for item in self.d[self.products]:
+            if item[self.name] == item_type:
+                return item[self.price]
+
+    def get_inventory_count(self, item_type):
+        for item in self.d[self.products]:
+            if item[self.name] == item_type:
+                return item[self.inventory_count]
+
+
+    def get_state_tax(self, state_name):
+        for tax in self.d[self.taxes]:
+            if tax[self.state] == state_name:
+                return tax[self.value]
+        else:
+            return 0.05
+
+
+
+
 # Calculation page - first child class
 class CalculationPage(Page):
     def __init__(self, driver):
@@ -91,7 +135,10 @@ class CalculationPage(Page):
 
     def checkout(self):
         self.driver.find_element_by_name('commit').click()
-        return ConfirmationPage(self.driver)
+        if self.driver.find_element_by_tag_name('h1').text == 'Please Confirm Your Order':
+            return ConfirmationPage(self.driver)
+        elif self.driver.find_element_by_tag_name('h1').text == 'We\'re sorry, but something went wrong.':
+            return ErrorPage(self.driver)
 
 
 # Confirmation page - second child class
@@ -116,12 +163,19 @@ class ConfirmationPage(Page):
     # KEEP ADDING PAGE ELEMENTS HERE
     # ...
 
+class ErrorPage(Page):
+    def __init__(self, driver):
+        super().__init__(driver)
+        self.driver = driver
+
+    def error_message(self):
+        return self.driver.find_element_by_tag_name('h1').text
 
 
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
 class TestCalculation(WebDriver):
 
-    def test_prices(self):
+    def test_prices_on_both_pages_match(self):
 
         self.on_calculation_page\
             .navigate_to_calculation_page()\
@@ -135,24 +189,19 @@ class TestCalculation(WebDriver):
         self.assertEqual(on_confirmation_page.elephant_quantity(), self.on_calculation_page.elephant)
         self.assertEqual(on_confirmation_page.giraffe_quantity(), self.on_calculation_page.giraffe)
 
-    def test_aaa(self):
-        print('aaa')
-
-    def test_bbb(self):
-        print('bbb')
-
-    def test_ccc(self):
-        print('ccc')
-
-# if __name__ is "__main__":
-#     unittest.main()
+    def test_nothing_entered(self):
+        self.on_calculation_page.navigate_to_calculation_page()
+        on_error_page = self.on_calculation_page.checkout()
+        self.assertEqual(on_error_page.error_message() , 'We\'re sorry, but something went wrong.')
 
 
 if __name__ is "__main__":
+    """ Run test suite """
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestCalculation))
     runner = unittest.TextTestRunner()
     runner.run(suite)
+
 
 
 
