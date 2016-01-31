@@ -31,9 +31,10 @@ from selenium.webdriver.common import keys
 import time
 from pyvirtualdisplay import Display
 import unittest
+from abc import ABCMeta, abstractmethod
 
 
-# base class
+# base class for page objects
 class Page():
     def __init__(self, driver):
         self.driver = driver
@@ -45,6 +46,25 @@ class Page():
     def navigate_to_calculation_page(self):
         self.driver.get('https://jungle-socks.herokuapp.com/')
         return CalculationPage(self.driver)
+
+
+# base class for webdriver
+class WebDriver(unittest.TestCase):
+    # __metaclass__ = ABCMeta
+
+    # @abstractmethod
+    def setUp(self):
+        # self._display = Display(visible=0, size=(1024, 768))  # uncomment for headless browser
+        # self._display.start()      uncomment for headless browser
+        self.driver = webdriver.Firefox()
+        self.on_calculation_page = CalculationPage(self.driver)
+        print('Setup. Before.')
+
+    # @abstractmethod
+    def tearDown(self):
+        # self._display.stop()  # uncomment for headless browser
+        self.driver.quit()
+        print('Teardown. After.')
 
 
 # Calculation page - first child class
@@ -103,30 +123,23 @@ class ConfirmationPage(Page):
     # ...
 
 
+
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
-class TestCalculation(unittest.TestCase):
-    def setUp(self):
-        # self._display = Display(visible=1, size=(1024, 768))
-        # self._display.start()
-        self.driver = webdriver.Firefox()
+class TestCalculation(WebDriver):    # see if you can avoid multiple inheritance !!!!
 
     def test_prices(self):
-        on_calculation_page = CalculationPage(self.driver)
-        on_calculation_page = on_calculation_page.navigate_to_calculation_page().add_quantities().select_state()
-        on_confirmation_page = on_calculation_page.checkout()
-        self.assertEqual(on_confirmation_page.zebra_quantity(), on_calculation_page.zebra)
-        self.assertEqual(on_confirmation_page.lion_quantity(), on_calculation_page.lion)
-        self.assertEqual(on_confirmation_page.elephant_quantity(), on_calculation_page.elephant)
-        self.assertEqual(on_confirmation_page.giraffe_quantity(), on_calculation_page.giraffe)
 
+        self.on_calculation_page\
+            .navigate_to_calculation_page()\
+            .add_quantities()\
+            .select_state()\
 
+        on_confirmation_page = self.on_calculation_page.checkout()
 
-
-
-    def tearDown(self):
-        # self._display.stop()
-        self.driver.close() # play with quit()
-
+        self.assertEqual(on_confirmation_page.zebra_quantity(), self.on_calculation_page.zebra)
+        self.assertEqual(on_confirmation_page.lion_quantity(), self.on_calculation_page.lion)
+        self.assertEqual(on_confirmation_page.elephant_quantity(), self.on_calculation_page.elephant)
+        self.assertEqual(on_confirmation_page.giraffe_quantity(), self.on_calculation_page.giraffe)
 
 
 if __name__ is "__main__":
