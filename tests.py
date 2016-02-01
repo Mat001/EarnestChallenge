@@ -1,39 +1,14 @@
 __author__ = 'matjaz'
 """
     TESTING PRODUCT CATALOG CALCULATIONS
-
-    Using your language and tools of choice, create a test suite that will verify correct
-    pricing for the above catalog and all state tariffs.
-
-    We are interested not only in the test scenarios you plan to execute but also in
-    how you design your test suite. If there are opportunities to modify each page's html
-    to make it more testable please let us know.
-    If you have any questions about success criteria please let us know.
-
-    1. test correct pricing for the above catalog and all state tariffs
-    2. test other things: that elements are present when on second page
-
-
-    PAGE OBJECT DESIGN PATTERN
-    --------------------------
-    Separates page elements from test logic.
-    Usefulness:
-    If page changes (different page) we only need to modify the
-    page elements class. We don't need to modify much the class
-    where tests are held. This way we keep frequently-changing-page-elements
-    separate from much-less-changing test-logic. And it's cleaner and more readable.
 """
 
 from selenium import webdriver
-from selenium.webdriver.support.ui import Select
-from selenium.common.exceptions import *
-from selenium.webdriver.common import keys
-import time
 from pyvirtualdisplay import Display
 import unittest
-import logging
 from page_objects import CalculationPage
 import test
+
 
 # base class for webdriver
 class WebDriver(unittest.TestCase):
@@ -46,7 +21,6 @@ class WebDriver(unittest.TestCase):
     def tearDown(self):
         # self._display.stop()  # uncomment for headless browser
         self.driver.quit()
-
 
 
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
@@ -115,7 +89,6 @@ class TestCalculation(WebDriver):
         taxes_expected = round(taxes_expected, 4)  # round decimal number to 4 digits
         # displayed taxes
         taxes_displayed = on_confirmation_page.taxes()
-        print('MN: ', taxes_expected, taxes_displayed)
         self.assertEqual(taxes_expected, taxes_displayed)
 
     def test_tax_co(self):
