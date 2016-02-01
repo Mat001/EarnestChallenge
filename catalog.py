@@ -56,6 +56,14 @@ class WebDriver(unittest.TestCase):
         self.driver = webdriver.Firefox()
         self.on_calculation_page = CalculationPage(self.driver)
 
+    # this method removes duplication
+    # It's used in most test methods so it's been put here and referenced as one line "navigate()"
+    def go_to_calculation_page_and_fill_it_out(self):
+        self.on_calculation_page \
+            .navigate_to_calculation_page() \
+            .add_quantities() \
+            .select_state()
+
     def tearDown(self):
         # self._display.stop()  # uncomment for headless browser
         self.driver.quit()
@@ -98,9 +106,9 @@ class Data():
     def get_state_tax(self, state_name):
         for tax in self.d[self.taxes]:
             if tax[self.state] == state_name:
-                return tax[self.value]
+                return float(tax[self.value])
         else:
-            return 0.05
+            return float(0.05)
 
 
 
@@ -111,13 +119,13 @@ class CalculationPage(Page):
         super().__init__(driver)
         self.driver = driver
 
-    # varirables for text fields and dropdown items
-    zebra = '1'
-    lion = '2'
-    elephant = '3'
-    giraffe = '4'
+    # variables for text fields and dropdown items
+    zebra = 1
+    lion = 2
+    elephant = 3
+    giraffe = 4
 
-    state = 'CA'
+    state = 'NY'
 
     # ============   PAGE ELEMENTS   =================
     # fill form  with data (fillitem fields with quantities and select state)
@@ -140,6 +148,9 @@ class CalculationPage(Page):
         elif self.driver.find_element_by_tag_name('h1').text == 'We\'re sorry, but something went wrong.':
             return ErrorPage(self.driver)
 
+    def tax_rate(self):
+        return Data().get_state_tax(self.state.lower())
+
 
 # Confirmation page - second child class
 class ConfirmationPage(Page):
@@ -148,20 +159,54 @@ class ConfirmationPage(Page):
         self.driver = driver
 
     # ============   PAGE ELEMENTS   =================
-    def zebra_quantity(self):
-        return self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[2]/td[3]').text
+    # QUANTITY
+    def quantity_zebra(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[2]/td[3]').text)
 
-    def lion_quantity(self):
-        return self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[3]/td[3]').text
+    def quantity_lion(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[3]/td[3]').text)
 
-    def elephant_quantity(self):
-        return self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[4]/td[3]').text
+    def quantity_elephant(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[4]/td[3]').text)
 
-    def giraffe_quantity(self):
-        return self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[5]/td[3]').text
+    def quantity_giraffe(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[5]/td[3]').text)
 
-    # KEEP ADDING PAGE ELEMENTS HERE
-    # ...
+    # PRICE
+    def price_zebra(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[2]/td[2]').text)
+
+    def price_lion(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[3]/td[2]').text)
+
+    def price_elephant(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[4]/td[2]').text)
+
+    def price_giraffe(self):
+        return float(self.driver.find_element_by_xpath('html/body/table[2]/tbody/tr[5]/td[2]').text)
+
+    # SUBTOTAL
+    def subtotal(self):
+        subtotal = self.driver.find_element_by_id('subtotal').text
+        if subtotal.startswith('$'):
+            return float(subtotal[1:])
+        else:
+            return float(subtotal)
+
+    def taxes(self):
+        taxes = self.driver.find_element_by_id('taxes').text
+        if taxes.startswith('$'):
+            return float(taxes[1:])
+        else:
+            return float(taxes)
+
+    def total(self):
+        total = self.driver.find_element_by_id('total').text
+        if total.startswith('$'):
+            return float(total[1:])
+        else:
+            return float(total)
+
 
 class ErrorPage(Page):
     def __init__(self, driver):
@@ -172,27 +217,71 @@ class ErrorPage(Page):
         return self.driver.find_element_by_tag_name('h1').text
 
 
+
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
 class TestCalculation(WebDriver):
 
-    def test_prices_on_both_pages_match(self):
+    def test_quantities_on_both_pages_match(self):
+        self.go_to_calculation_page_and_fill_it_out()
 
-        self.on_calculation_page\
-            .navigate_to_calculation_page()\
-            .add_quantities()\
-            .select_state()\
+        on_confirmation_page = self.on_calculation_page.checkout()
+        self.assertEqual(on_confirmation_page.quantity_zebra(), self.on_calculation_page.zebra)
+        self.assertEqual(on_confirmation_page.quantity_lion(), self.on_calculation_page.lion)
+        self.assertEqual(on_confirmation_page.quantity_elephant(), self.on_calculation_page.elephant)
+        self.assertEqual(on_confirmation_page.quantity_giraffe(), self.on_calculation_page.giraffe)
+
+
+    def test_displayed_prices_on_both_pages_match(self):
+        pass
+
+    def test_subtotal(self):
+        self.go_to_calculation_page_and_fill_it_out()
 
         on_confirmation_page = self.on_calculation_page.checkout()
 
-        self.assertEqual(on_confirmation_page.zebra_quantity(), self.on_calculation_page.zebra)
-        self.assertEqual(on_confirmation_page.lion_quantity(), self.on_calculation_page.lion)
-        self.assertEqual(on_confirmation_page.elephant_quantity(), self.on_calculation_page.elephant)
-        self.assertEqual(on_confirmation_page.giraffe_quantity(), self.on_calculation_page.giraffe)
+        subtotal_zebra = on_confirmation_page.price_zebra() * on_confirmation_page.quantity_zebra()
+        subtotal_lion = on_confirmation_page.price_lion() * on_confirmation_page.quantity_lion()
+        subtotal_elephant = on_confirmation_page.price_elephant() * on_confirmation_page.quantity_elephant()
+        subtotal_giraffe = on_confirmation_page.price_giraffe() * on_confirmation_page.quantity_giraffe()
 
-    def test_nothing_entered(self):
+        subtotal_expected = subtotal_zebra + subtotal_lion + subtotal_elephant + subtotal_giraffe
+        subtotal_displayed = on_confirmation_page.subtotal()
+        self.assertEqual(subtotal_expected, subtotal_displayed)
+
+
+    def test_tax(self):
+        self.go_to_calculation_page_and_fill_it_out()
+
+        on_confirmation_page = self.on_calculation_page.checkout()
+
+        # expected taxes
+        taxes_expected = on_confirmation_page.subtotal() * self.on_calculation_page.tax_rate()
+        taxes_expected = round(taxes_expected, 4)   # round decimal number to 4 digits
+        # displayed taxes
+        taxes_displayed = on_confirmation_page.taxes()
+        self.assertEqual(taxes_expected, taxes_displayed)
+
+    def test_total(self):
+        self.go_to_calculation_page_and_fill_it_out()
+
+        on_confirmation_page = self.on_calculation_page.checkout()
+
+        total_expected = on_confirmation_page.subtotal() + on_confirmation_page.taxes()
+        total_displayed = on_confirmation_page.total()
+        self.assertEqual(total_displayed, total_expected)
+
+    # EDGE CASES
+    def test_nothing_entered_should_take_to_error_page(self):
         self.on_calculation_page.navigate_to_calculation_page()
         on_error_page = self.on_calculation_page.checkout()
         self.assertEqual(on_error_page.error_message() , 'We\'re sorry, but something went wrong.')
+
+    def test_no_state_selected_should_take_to_error_page(self):
+        self.go_to_calculation_page_and_fill_it_out()
+        on_error_page = self.on_calculation_page.checkout()
+        self.assertEqual(on_error_page.error_message(), 'We\'re sorry, but something went wrong.')
+
+
 
 
 if __name__ is "__main__":
