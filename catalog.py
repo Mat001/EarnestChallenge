@@ -31,8 +31,14 @@ from selenium.webdriver.common import keys
 import time
 from pyvirtualdisplay import Display
 import unittest
-from abc import ABCMeta, abstractmethod
+import logging
 
+
+ZEBRA = 1
+LION = 2
+ELEPHANT = 3
+GIRAFFE = 4
+STATE = 'NY'
 
 # base class for page objects
 class Page():
@@ -111,34 +117,25 @@ class Data():
             return float(0.05)
 
 
-
-
 # Calculation page - first child class
 class CalculationPage(Page):
+    # variables for text fields and dropdown items
     def __init__(self, driver):
         super().__init__(driver)
         self.driver = driver
 
-    # variables for text fields and dropdown items
-    zebra = 1
-    lion = 2
-    elephant = 3
-    giraffe = 4
-
-    state = 'NY'
-
     # ============   PAGE ELEMENTS   =================
     # fill form  with data (fillitem fields with quantities and select state)
     def add_quantities(self):
-        self.driver.find_element_by_id('line_item_quantity_zebra').send_keys(self.zebra)
-        self.driver.find_element_by_id('line_item_quantity_lion').send_keys(self.lion)
-        self.driver.find_element_by_id('line_item_quantity_elephant').send_keys(self.elephant)
-        self.driver.find_element_by_id('line_item_quantity_giraffe').send_keys(self.giraffe)
+        self.driver.find_element_by_id('line_item_quantity_zebra').send_keys(ZEBRA)
+        self.driver.find_element_by_id('line_item_quantity_lion').send_keys(LION)
+        self.driver.find_element_by_id('line_item_quantity_elephant').send_keys(ELEPHANT)
+        self.driver.find_element_by_id('line_item_quantity_giraffe').send_keys(GIRAFFE)
         return CalculationPage(self.driver)
 
     def select_state(self):
         select_state = Select(self.driver.find_element_by_name('state'))    # dropdown could go in its own method?
-        select_state.select_by_value(self.state)
+        select_state.select_by_value(STATE)
         return CalculationPage(self.driver)
 
     def checkout(self):
@@ -149,7 +146,21 @@ class CalculationPage(Page):
             return ErrorPage(self.driver)
 
     def tax_rate(self):
-        return Data().get_state_tax(self.state.lower())
+        return Data().get_state_tax(STATE.lower())
+
+    def get_price_zebra_calc_page(self):
+        return float(self.driver.find_element_by_xpath('html/body/form/table[1]/tbody/tr[2]/td[2]').text)
+
+    def get_price_lion_calc_page(self):
+        return float(self.driver.find_element_by_xpath('html/body/form/table[1]/tbody/tr[3]/td[2]').text)
+
+    def get_price_elephant_calc_page(self):
+        return float(self.driver.find_element_by_xpath('html/body/form/table[1]/tbody/tr[4]/td[2]').text)
+
+    def get_price_giraffe_calc_page(self):
+        return float(self.driver.find_element_by_xpath('html/body/form/table[1]/tbody/tr[5]/td[2]').text)
+
+
 
 
 # Confirmation page - second child class
@@ -221,19 +232,7 @@ class ErrorPage(Page):
 # =====   TESTS, TEST LOGIC, ASSERTIONS, TEST RUNNER
 class TestCalculation(WebDriver):
 
-    def test_quantities_on_both_pages_match(self):
-        self.go_to_calculation_page_and_fill_it_out()
-
-        on_confirmation_page = self.on_calculation_page.checkout()
-        self.assertEqual(on_confirmation_page.quantity_zebra(), self.on_calculation_page.zebra)
-        self.assertEqual(on_confirmation_page.quantity_lion(), self.on_calculation_page.lion)
-        self.assertEqual(on_confirmation_page.quantity_elephant(), self.on_calculation_page.elephant)
-        self.assertEqual(on_confirmation_page.quantity_giraffe(), self.on_calculation_page.giraffe)
-
-
-    def test_displayed_prices_on_both_pages_match(self):
-        pass
-
+    # ==========   TESTS FOR CALCULATIONS   ===========
     def test_subtotal(self):
         self.go_to_calculation_page_and_fill_it_out()
 
@@ -261,6 +260,7 @@ class TestCalculation(WebDriver):
         taxes_displayed = on_confirmation_page.taxes()
         self.assertEqual(taxes_expected, taxes_displayed)
 
+
     def test_total(self):
         self.go_to_calculation_page_and_fill_it_out()
 
@@ -270,24 +270,104 @@ class TestCalculation(WebDriver):
         total_displayed = on_confirmation_page.total()
         self.assertEqual(total_displayed, total_expected)
 
-    # EDGE CASES
+
+class TestFormat(WebDriver):
+    # ==========   TESTS RELATED TO THE FORMAT AND OF ENTERED VALUES   ===========
+    def test_item_where_entered_characters_should_no_be_calculated(self):
+        pass
+
+    def test_item_whereentered_special_chars_should_not_be_calculated(self):
+        pass
+
+    def test_mix_of_entered_specialchars_chars_numbers_should_calculate_only_numbers(self):
+        pass
+
+    def test_entered_exremely_large_numbers_should_be_limited(self):
+        pass
+
+    def test_all_entered_are_characters_should_calculate_total_zero(self):
+        pass
+
+    def test_entered_decimal_number_should_have_decimal_part_truncated(self):
+        pass
+
+    def test_negative_numbers_ignored_in_calculation(self):
+        pass
+
+
+class TestInventoryLimit(WebDriver):
+    # ==========   TESTS RELATED INVENTORY LIMIT   ===========
+    def test_quantities_higher_than_stock_not_allowed(self):
+        pass
+
+
+class TestDataDriven(WebDriver):
+    # ==========   TESTS RELATED TO COMBINATIONS OF POPULATED AND EMPTY FIELDS AND STATE SELECTIONS   ===========
+    pass
+
+
+class TestDisplay(WebDriver):
+    # ==========   TESTS RELATED TO CORRECTLY DISPLAYING VALUES   ===========
+    def test_entered_quantities_display_on_confirmation_page(self):
+        self.go_to_calculation_page_and_fill_it_out()
+        on_confirmation_page = self.on_calculation_page.checkout()
+
+        self.assertEqual(on_confirmation_page.quantity_zebra(), ZEBRA)
+        self.assertEqual(on_confirmation_page.quantity_lion(), LION)
+        self.assertEqual(on_confirmation_page.quantity_elephant(), ELEPHANT)
+        self.assertEqual(on_confirmation_page.quantity_giraffe(), GIRAFFE)
+
+    def test_displayed_prices_on_both_pages_match(self):
+        self.go_to_calculation_page_and_fill_it_out()
+        on_confirmation_page = self.on_calculation_page.checkout()
+
+        self.assertEqual(on_confirmation_page.price_zebra(), self.on_calculation_page.get_price_zebra_calc_page())
+        self.assertEqual(on_confirmation_page.price_lion(), self.on_calculation_page.get_price_lion_calc_page())
+        self.assertEqual(on_confirmation_page.price_elephant(), self.on_calculation_page.get_price_elephant_calc_page())
+        self.assertEqual(on_confirmation_page.price_giraffe(), self.on_calculation_page.get_price_giraffe_calc_page())
+
+
+class TestEdgeCases(WebDriver):
+    # ========   TESTING EDGE CASES   =============
     def test_nothing_entered_should_take_to_error_page(self):
         self.on_calculation_page.navigate_to_calculation_page()
         on_error_page = self.on_calculation_page.checkout()
-        self.assertEqual(on_error_page.error_message() , 'We\'re sorry, but something went wrong.')
+        self.assertEqual(on_error_page.error_message(), 'We\'re sorry, but something went wrong.')
 
-    def test_no_state_selected_should_take_to_error_page(self):
-        self.go_to_calculation_page_and_fill_it_out()
+    def test_quantites_all_selected_but_no_state_should_take_to_error_page(self):
+        self.on_calculation_page \
+            .navigate_to_calculation_page() \
+            .add_quantities()
+        # no state selected !
+
+        # should redirect to error page
         on_error_page = self.on_calculation_page.checkout()
         self.assertEqual(on_error_page.error_message(), 'We\'re sorry, but something went wrong.')
 
+    def test_state_selected_but_no_quantities_should_total_zero(self):
+        self.on_calculation_page \
+            .navigate_to_calculation_page() \
+            .select_state()
+
+        # should ive total as zero
+        on_confirmation_page = self.on_calculation_page.checkout()
+
+        total_expected = on_confirmation_page.subtotal() + on_confirmation_page.taxes()
+        total_displayed = on_confirmation_page.total()
+        self.assertEqual(total_displayed, total_expected)
+        self.assertEqual(total_displayed, 0.00)
 
 
 
 if __name__ is "__main__":
-    """ Run test suite """
+    """ Run test suites """
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestCalculation))
+    suite.addTest(unittest.makeSuite(TestDisplay))
+    suite.addTest(unittest.makeSuite(TestDataDriven))
+    suite.addTest(unittest.makeSuite(TestEdgeCases))
+    suite.addTest(unittest.makeSuite(TestFormat))
+    suite.addTest(unittest.makeSuite(TestInventoryLimit))
     runner = unittest.TextTestRunner()
     runner.run(suite)
 
