@@ -71,8 +71,6 @@ My goal was to make tests short and readable. For my standards they are still to
 
 All tests except one pass. The failed test is in class TestInventoryLimit which tests that user can't
  order more items than in stock. But the program doesn't have this safeguard so the test fails.
- 
-I wasn't quite sure
 
 Testability of the web pages could be improved if table elements had id-s as well.
 Using xpaths is not reliable because when position of an element changes, the xpath breaks and xpath then needs 
