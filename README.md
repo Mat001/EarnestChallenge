@@ -1,6 +1,11 @@
 PRODUCT CATALOG TESTING
 =========================
 
+Firstly, I know Java, but since I'm currently more comfortable with Python I wrote this 
+these tests in Python, just for this assignment. I hope the code is readable enough and 
+explanation below at least satisfactory to a degree. Otherwise please email me or call me.
+Happy to answer questions.
+
 Explanations and instructions
 
 Tu run:
